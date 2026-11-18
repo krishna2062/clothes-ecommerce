@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { StoreProvider } from './context/StoreContext';
 import { ToastContainer } from './components/common/ToastContainer';
 
@@ -82,16 +82,10 @@ import {
   AdminAuditLogsPage,
 } from './pages/admin/AdminSystemPages';
 
-const routerBasename =
-  typeof window !== 'undefined' &&
-  window.location.pathname.startsWith('/clothes-ecommerce')
-    ? '/clothes-ecommerce'
-    : '/';
-
 export default function App() {
   return (
     <StoreProvider>
-      <BrowserRouter basename={routerBasename}>
+      <HashRouter>
         <ToastContainer />
         <Routes>
           {/* A. PUBLIC CUSTOMER WEBSITE (22 Routes) */}
@@ -175,7 +169,7 @@ export default function App() {
           {/* Fallback redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </StoreProvider>
   );
 }
