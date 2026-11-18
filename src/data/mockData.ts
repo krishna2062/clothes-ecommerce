@@ -17,13 +17,21 @@ import {
   StockMovement,
 } from '../types';
 
-export const IMG_HERO = '/src/assets/images/hero_editorial_campaign_1795011269648.jpg';
-export const IMG_COAT = '/src/assets/images/product_structured_wool_coat_1795011272567.jpg';
-export const IMG_SHIRT = '/src/assets/images/product_silk_poplin_shirt_1795011273913.jpg';
-export const IMG_TROUSERS = '/src/assets/images/product_pleated_trousers_1795011276267.jpg';
-export const IMG_SWEATER = '/src/assets/images/product_cashmere_knit_sweater_1795011275337.jpg';
-export const IMG_TOTE = '/src/assets/images/product_minimal_leather_tote_1795011277260.jpg';
-export const IMG_ATELIER = '/src/assets/images/atelier_brand_story_1795011277837.jpg';
+import heroImgUrl from '../assets/images/hero_editorial_campaign_1795011269648.jpg';
+import coatImgUrl from '../assets/images/product_structured_wool_coat_1795011272567.jpg';
+import shirtImgUrl from '../assets/images/product_silk_poplin_shirt_1795011273913.jpg';
+import trousersImgUrl from '../assets/images/product_pleated_trousers_1795011276267.jpg';
+import sweaterImgUrl from '../assets/images/product_cashmere_knit_sweater_1795011275337.jpg';
+import toteImgUrl from '../assets/images/product_minimal_leather_tote_1795011277260.jpg';
+import atelierImgUrl from '../assets/images/atelier_brand_story_1795011277837.jpg';
+
+export const IMG_HERO = heroImgUrl;
+export const IMG_COAT = coatImgUrl;
+export const IMG_SHIRT = shirtImgUrl;
+export const IMG_TROUSERS = trousersImgUrl;
+export const IMG_SWEATER = sweaterImgUrl;
+export const IMG_TOTE = toteImgUrl;
+export const IMG_ATELIER = atelierImgUrl;
 
 export const INITIAL_PRODUCTS: Product[] = [
   {

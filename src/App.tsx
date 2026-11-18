@@ -82,10 +82,16 @@ import {
   AdminAuditLogsPage,
 } from './pages/admin/AdminSystemPages';
 
+const routerBasename =
+  typeof window !== 'undefined' &&
+  window.location.pathname.startsWith('/clothes-ecommerce')
+    ? '/clothes-ecommerce'
+    : '/';
+
 export default function App() {
   return (
     <StoreProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         <ToastContainer />
         <Routes>
           {/* A. PUBLIC CUSTOMER WEBSITE (22 Routes) */}
