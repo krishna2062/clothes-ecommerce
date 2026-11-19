@@ -28,7 +28,7 @@ import {
 import { useStore } from '../context/StoreContext';
 
 export const AdminLayout: React.FC = () => {
-  const { brandSettings, notifications, orders } = useStore();
+  const { brandSettings, notifications, orders, authUser, logoutUser } = useStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
@@ -123,18 +123,22 @@ export const AdminLayout: React.FC = () => {
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#222222] text-xs text-[#999999] flex items-center justify-between">
+        <div className="p-4 border-t border-[#222222] text-xs text-[#999999] flex items-center justify-between gap-2">
           <div className="truncate">
-            <p className="text-white font-medium truncate">Siddhartha Bhandari</p>
-            <p className="text-[11px] text-[#777777]">Super Admin</p>
+            <p className="text-white font-medium truncate">
+              {authUser?.fullName || 'Siddhartha Bhandari'}
+            </p>
+            <p className="text-[11px] text-[#777777] truncate">
+              {authUser?.roleTitle || 'Super Admin'}
+            </p>
           </div>
           <Link
-            to="/"
-            className="text-xs text-white hover:underline flex items-center gap-1 shrink-0"
-            title="View Live Storefront"
+            to="/login"
+            onClick={logoutUser}
+            className="text-xs text-[#CCCCCC] hover:text-white underline shrink-0"
+            title="Switch Account or Sign Out"
           >
-            <span>Store</span>
-            <ExternalLink className="h-3.5 w-3.5" />
+            Sign Out
           </Link>
         </div>
       </aside>

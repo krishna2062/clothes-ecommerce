@@ -767,7 +767,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: 'STF-01',
     fullName: 'Siddhartha Bhandari',
-    email: 'siddhartha@yourbrand.com',
+    email: 'admin@maisonvera.com',
     phone: '+977 9801000001',
     role: 'Super Admin',
     status: 'Active',
@@ -777,7 +777,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: 'STF-02',
     fullName: 'Anushka Thapa',
-    email: 'anushka.creative@yourbrand.com',
+    email: 'staff@maisonvera.com',
     phone: '+977 9801000002',
     role: 'Product Manager',
     status: 'Active',
@@ -787,7 +787,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: 'STF-03',
     fullName: 'Rohan Maharjan',
-    email: 'rohan.logistics@yourbrand.com',
+    email: 'orders@maisonvera.com',
     phone: '+977 9801000003',
     role: 'Order Manager',
     status: 'Active',
@@ -797,7 +797,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: 'STF-04',
     fullName: 'Pratistha Joshi',
-    email: 'pratistha.finance@yourbrand.com',
+    email: 'finance@maisonvera.com',
     phone: '+977 9801000004',
     role: 'Payment Manager',
     status: 'Active',
@@ -807,7 +807,7 @@ export const INITIAL_STAFF: StaffMember[] = [
   {
     id: 'STF-05',
     fullName: 'Kabir Basnet',
-    email: 'kabir.concierge@yourbrand.com',
+    email: 'concierge@maisonvera.com',
     phone: '+977 9801000005',
     role: 'Customer Support',
     status: 'Active',
@@ -1124,18 +1124,18 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
 ];
 
 export const INITIAL_BRAND_SETTINGS: BrandSettings = {
-  brandName: 'YOUR BRAND',
+  brandName: 'MAISON VÉRA',
   tagline: 'Architectural Silence. Sartorial Permanence.',
   description:
     'A contemporary luxury fashion house crafting unisex architectural tailoring, double-faced virgin wool outerwear, and pure mulberry silk essentials.',
-  contactEmail: 'concierge@yourbrand.com',
+  contactEmail: 'concierge@maisonvera.com',
   contactPhone: '+977 1-4429800',
   flagshipAddress: '14 Durbar Marg Heritage Wing, Kathmandu 44600, Nepal',
-  announcementBarText: 'AUTUMN / WINTER 2026 MONOLITH — COMPLIMENTARY WHITE-GLOVE DELIVERY ON ALL ORDERS',
+  announcementBarText: 'MAISON VÉRA AUTUMN / WINTER 2026 — COMPLIMENTARY WHITE-GLOVE DELIVERY ON ALL ORDERS',
   announcementBarActive: true,
-  instagramUrl: 'https://instagram.com/yourbrand',
-  pinterestUrl: 'https://pinterest.com/yourbrand',
-  weiboUrl: 'https://weibo.com/yourbrand',
+  instagramUrl: 'https://instagram.com/maisonvera',
+  pinterestUrl: 'https://pinterest.com/maisonvera',
+  weiboUrl: 'https://weibo.com/maisonvera',
   expressDeliveryEnabled: true,
 };
 
@@ -1144,13 +1144,13 @@ export const INITIAL_PAYMENT_SETTINGS: PaymentGatewaySettings = {
   codInstructions:
     'Pay in cash or via terminal upon doorstep inspection. Available for orders up to NPR 75,000 across major metro districts.',
   esewaEnabled: true,
-  esewaMerchantId: '9801100200 (YOUR BRAND ATELIER PVT. LTD.)',
+  esewaMerchantId: '9801100200 (MAISON VÉRA ATELIER PVT. LTD.)',
   esewaQrImage: '',
   khaltiEnabled: true,
-  khaltiMerchantId: '9801100200 (YOUR BRAND ATELIER)',
+  khaltiMerchantId: '9801100200 (MAISON VÉRA ATELIER)',
   khaltiQrImage: '',
   fonepayEnabled: true,
-  fonepayMerchantName: 'YOUR BRAND FASHION HOUSE — SIDDHARTHA BANK',
+  fonepayMerchantName: 'MAISON VÉRA FASHION HOUSE — SIDDHARTHA BANK',
   fonepayQrImage: '',
   paymentInstructions:
     'Scan the official merchant QR code using your mobile banking or wallet app, complete the exact payable amount transfer, and upload the transaction confirmation screenshot along with the reference ID.',

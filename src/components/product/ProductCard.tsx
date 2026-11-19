@@ -18,7 +18,7 @@ export const ResilientImage: React.FC<{
         className={`flex flex-col items-center justify-center bg-[#F3F3F3] text-[#777777] p-6 text-center ${className}`}
       >
         <span className="font-serif text-sm tracking-widest uppercase text-[#080808]">
-          YOUR BRAND
+          MAISON VÉRA
         </span>
         <span className="text-xs mt-1 text-[#777777] line-clamp-2">{alt}</span>
       </div>

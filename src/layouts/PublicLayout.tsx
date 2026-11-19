@@ -54,15 +54,23 @@ export const PublicLayout: React.FC = () => {
       {/* Announcement Bar (<= 36px height) */}
       {brandSettings.announcementBarActive && (
         <div className="bg-[#080808] text-white text-[11px] tracking-[0.18em] uppercase py-2 px-4 text-center">
-          <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-            <span className="hidden md:inline text-[#777777]">ATELIER EDITION 2026</span>
+          <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-4">
+            <span className="hidden md:inline text-[#777777]">MAISON VÉRA ATELIER</span>
             <span className="mx-auto truncate">{brandSettings.announcementBarText}</span>
-            <Link
-              to="/admin"
-              className="hidden md:inline text-[#CCCCCC] hover:text-white underline underline-offset-4 whitespace-nowrap shrink-0"
-            >
-              Admin Console
-            </Link>
+            <div className="hidden md:flex items-center gap-4 shrink-0">
+              <Link
+                to="/login"
+                className="text-[#CCCCCC] hover:text-white underline underline-offset-4 whitespace-nowrap"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/register"
+                className="text-white font-semibold underline underline-offset-4 whitespace-nowrap"
+              >
+                Sign Up
+              </Link>
+            </div>
           </div>
         </div>
       )}
@@ -108,7 +116,7 @@ export const PublicLayout: React.FC = () => {
           </nav>
 
           {/* Zone 3: Storefront Utility Actions */}
-          <div className="flex items-center gap-4 sm:gap-5 shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
             <button
               type="button"
               onClick={() => setSearchOpen((prev) => !prev)}
@@ -118,11 +126,18 @@ export const PublicLayout: React.FC = () => {
               <Search className="h-4 w-4" />
             </button>
             <Link
-              to="/account"
-              className="p-1.5 text-[#080808] hover:text-[#777777] transition-colors"
-              aria-label="Customer account"
+              to="/login"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs uppercase tracking-widest text-[#080808] hover:text-[#777777] transition-colors whitespace-nowrap"
+              aria-label="Unified Sign In"
             >
               <User className="h-4 w-4" />
+              <span>Sign In</span>
+            </Link>
+            <Link
+              to="/register"
+              className="hidden md:inline-flex border border-[#080808] text-[#080808] px-3 py-1.5 text-xs uppercase tracking-widest hover:bg-[#080808] hover:text-white transition-colors whitespace-nowrap"
+            >
+              Sign Up
             </Link>
             <Link
               to="/wishlist"

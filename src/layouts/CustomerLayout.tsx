@@ -15,7 +15,7 @@ import {
 import { useStore } from '../context/StoreContext';
 
 export const CustomerLayout: React.FC = () => {
-  const { currentCustomer, brandSettings, notifications } = useStore();
+  const { currentCustomer, brandSettings, notifications, logoutUser } = useStore();
   const unreadCount = notifications.filter(
     (n) => !n.read && (n.target === 'customer' || n.target === 'both')
   ).length;
@@ -55,17 +55,18 @@ export const CustomerLayout: React.FC = () => {
             <Link to="/cart" className="hover:text-[#080808] transition-colors whitespace-nowrap">
               Shopping Bag
             </Link>
-            <Link to="/admin" className="hover:text-[#080808] transition-colors whitespace-nowrap">
-              Admin Console
+            <Link to="/login" className="hover:text-[#080808] transition-colors whitespace-nowrap">
+              Switch Account / Admin Login
             </Link>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="text-xs text-[#777777] hidden sm:inline">
-              {currentCustomer.fullName}
+            <span className="text-xs font-medium text-[#080808] hidden sm:inline">
+              {currentCustomer.fullName}&apos;s Dashboard
             </span>
             <Link
               to="/login"
+              onClick={logoutUser}
               className="text-xs uppercase tracking-widest border border-[#E5E5E5] px-3 py-1.5 hover:border-[#080808] transition-colors whitespace-nowrap"
             >
               Sign Out
@@ -86,7 +87,7 @@ export const CustomerLayout: React.FC = () => {
               <span>Continue Shopping</span>
             </Link>
             <h1 className="font-serif text-2xl sm:text-3xl text-[#080808]">
-              Private Client Dossier
+              {currentCustomer.fullName} — Personal Dashboard
             </h1>
           </div>
           <p className="text-xs text-[#777777] tabular-nums">

@@ -47,6 +47,15 @@ export interface ToastMessage {
   type?: 'default' | 'success' | 'error';
 }
 
+export interface AuthenticatedSession {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  accountType: 'customer' | 'staff' | 'admin';
+  roleTitle: string;
+}
+
 interface StoreContextType {
   // Entities
   products: Product[];
@@ -57,6 +66,7 @@ interface StoreContextType {
   orders: Order[];
   customers: Customer[];
   currentCustomer: Customer;
+  authUser: AuthenticatedSession | null;
   staff: StaffMember[];
   roles: RolePermission[];
   coupons: Coupon[];
@@ -75,6 +85,20 @@ interface StoreContextType {
   // Toast helper
   showToast: (title: string, description?: string, type?: ToastMessage['type']) => void;
   dismissToast: (id: string) => void;
+
+  // Unified Authentication (Customer, Staff, Admin)
+  loginWithCredentials: (
+    identifier: string,
+    portalRole?: 'auto' | 'customer' | 'staff' | 'admin'
+  ) => AuthenticatedSession;
+  registerAccount: (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    accountType: 'customer' | 'staff' | 'admin';
+    staffRole?: StaffMember['role'];
+  }) => AuthenticatedSession;
+  logoutUser: () => void;
 
   // Cart & Wishlist Actions
   addToCart: (item: CartItem) => void;
@@ -171,10 +195,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadFromStorage('yb_orders_v1', INITIAL_ORDERS)
   );
   const [customers, setCustomers] = useState<Customer[]>(() =>
-    loadFromStorage('yb_customers_v1', INITIAL_CUSTOMERS)
+    loadFromStorage('yb_customers_v2', INITIAL_CUSTOMERS)
+  );
+  const [activeCustomerId, setActiveCustomerId] = useState<string>(() =>
+    loadFromStorage('yb_active_customer_id_v2', INITIAL_CUSTOMERS[0].id)
+  );
+  const [authUser, setAuthUser] = useState<AuthenticatedSession | null>(() =>
+    loadFromStorage<AuthenticatedSession | null>('yb_auth_user_v2', {
+      id: INITIAL_CUSTOMERS[0].id,
+      fullName: INITIAL_CUSTOMERS[0].fullName,
+      email: INITIAL_CUSTOMERS[0].email,
+      phone: INITIAL_CUSTOMERS[0].phone,
+      accountType: 'customer',
+      roleTitle: 'Private Client',
+    })
   );
   const [staff, setStaff] = useState<StaffMember[]>(() =>
-    loadFromStorage('yb_staff_v1', INITIAL_STAFF)
+    loadFromStorage('yb_staff_v2', INITIAL_STAFF)
   );
   const [roles, setRoles] = useState<RolePermission[]>(() =>
     loadFromStorage('yb_roles_v1', INITIAL_ROLES)
@@ -198,10 +235,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     loadFromStorage('yb_audit_v1', INITIAL_AUDIT_LOGS)
   );
   const [brandSettings, setBrandSettings] = useState<BrandSettings>(() =>
-    loadFromStorage('yb_brand_v1', INITIAL_BRAND_SETTINGS)
+    loadFromStorage('yb_brand_v2', INITIAL_BRAND_SETTINGS)
   );
   const [paymentSettings, setPaymentSettings] = useState<PaymentGatewaySettings>(() =>
-    loadFromStorage('yb_payment_v1', INITIAL_PAYMENT_SETTINGS)
+    loadFromStorage('yb_payment_v2', INITIAL_PAYMENT_SETTINGS)
   );
   const [stockMovements, setStockMovements] = useState<StockMovement[]>(() =>
     loadFromStorage('yb_stock_v1', INITIAL_STOCK_MOVEMENTS)
@@ -220,8 +257,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('yb_cart_v1', JSON.stringify(cart));
       localStorage.setItem('yb_wishlist_v1', JSON.stringify(wishlist));
       localStorage.setItem('yb_orders_v1', JSON.stringify(orders));
-      localStorage.setItem('yb_customers_v1', JSON.stringify(customers));
-      localStorage.setItem('yb_staff_v1', JSON.stringify(staff));
+      localStorage.setItem('yb_customers_v2', JSON.stringify(customers));
+      localStorage.setItem('yb_active_customer_id_v2', JSON.stringify(activeCustomerId));
+      localStorage.setItem('yb_auth_user_v2', JSON.stringify(authUser));
+      localStorage.setItem('yb_staff_v2', JSON.stringify(staff));
       localStorage.setItem('yb_roles_v1', JSON.stringify(roles));
       localStorage.setItem('yb_coupons_v1', JSON.stringify(coupons));
       localStorage.setItem('yb_reviews_v1', JSON.stringify(reviews));
@@ -229,8 +268,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem('yb_delivery_v1', JSON.stringify(deliveryZones));
       localStorage.setItem('yb_notifications_v1', JSON.stringify(notifications));
       localStorage.setItem('yb_audit_v1', JSON.stringify(auditLogs));
-      localStorage.setItem('yb_brand_v1', JSON.stringify(brandSettings));
-      localStorage.setItem('yb_payment_v1', JSON.stringify(paymentSettings));
+      localStorage.setItem('yb_brand_v2', JSON.stringify(brandSettings));
+      localStorage.setItem('yb_payment_v2', JSON.stringify(paymentSettings));
       localStorage.setItem('yb_stock_v1', JSON.stringify(stockMovements));
     } catch {
       // ignore storage quota errors
@@ -243,6 +282,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     wishlist,
     orders,
     customers,
+    activeCustomerId,
+    authUser,
     staff,
     roles,
     coupons,
@@ -271,8 +312,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const logAudit = (action: string, module: string, details: string) => {
     const entry: AuditLogEntry = {
       id: `AUD-${Date.now().toString().slice(-4)}`,
-      user: 'Siddhartha Bhandari',
-      role: 'Super Admin',
+      user: authUser?.fullName || 'Siddhartha Bhandari',
+      role: authUser?.roleTitle || 'Super Admin',
       action,
       module,
       date: new Date().toISOString().replace('T', ' ').slice(0, 19),
@@ -281,7 +322,207 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setAuditLogs((prev) => [entry, ...prev]);
   };
 
-  const currentCustomer = customers[0];
+  const currentCustomer =
+    customers.find((c) => c.id === activeCustomerId) || customers[0];
+
+  const loginWithCredentials = (
+    identifier: string,
+    portalRole: 'auto' | 'customer' | 'staff' | 'admin' = 'auto'
+  ): AuthenticatedSession => {
+    const clean = identifier.trim().toLowerCase();
+
+    // Check if matches any staff or admin member
+    const matchedStaff = staff.find(
+      (s) =>
+        s.email.toLowerCase() === clean ||
+        s.phone.replace(/\s+/g, '') === clean.replace(/\s+/g, '') ||
+        s.fullName.toLowerCase() === clean
+    );
+
+    if (
+      matchedStaff ||
+      portalRole === 'admin' ||
+      portalRole === 'staff' ||
+      clean.includes('admin') ||
+      clean.includes('staff')
+    ) {
+      const targetStaff =
+        matchedStaff ||
+        (portalRole === 'staff' ? staff[1] || staff[0] : staff[0]);
+      const isSuperOrAdmin =
+        targetStaff.role === 'Super Admin' ||
+        targetStaff.role === 'Admin' ||
+        portalRole === 'admin';
+      const session: AuthenticatedSession = {
+        id: targetStaff.id,
+        fullName: targetStaff.fullName,
+        email: targetStaff.email,
+        phone: targetStaff.phone,
+        accountType: isSuperOrAdmin ? 'admin' : 'staff',
+        roleTitle: targetStaff.role,
+      };
+      setAuthUser(session);
+      showToast(
+        `Signed In as ${session.fullName}`,
+        `${session.roleTitle} Portal Activated`,
+        'success'
+      );
+      return session;
+    }
+
+    // Check if matches an existing customer
+    const matchedCustomer = customers.find(
+      (c) =>
+        c.email.toLowerCase() === clean ||
+        c.phone.replace(/\s+/g, '') === clean.replace(/\s+/g, '') ||
+        c.fullName.toLowerCase() === clean
+    );
+
+    if (matchedCustomer) {
+      setActiveCustomerId(matchedCustomer.id);
+      const session: AuthenticatedSession = {
+        id: matchedCustomer.id,
+        fullName: matchedCustomer.fullName,
+        email: matchedCustomer.email,
+        phone: matchedCustomer.phone,
+        accountType: 'customer',
+        roleTitle: 'Private Client',
+      };
+      setAuthUser(session);
+      showToast(
+        `Welcome Back, ${matchedCustomer.fullName}`,
+        'Private Client Dossier Loaded',
+        'success'
+      );
+      return session;
+    }
+
+    // Otherwise dynamically create a new customer profile from the entered identifier
+    const derivedName = clean.includes('@')
+      ? clean
+          .split('@')[0]
+          .replace(/[._-]+/g, ' ')
+          .replace(/\b\w/g, (l) => l.toUpperCase())
+      : identifier.trim();
+    const newCust: Customer = {
+      id: `CUST-00${customers.length + 1}`,
+      fullName: derivedName || 'Private Client',
+      email: clean.includes('@') ? clean : `${derivedName.toLowerCase().replace(/\s+/g, '.')}@client.np`,
+      phone: clean.includes('@') ? '+977 9801122334' : identifier.trim(),
+      avatar: INITIAL_CUSTOMERS[0].avatar,
+      joinedDate: new Date().toISOString().slice(0, 10),
+      totalOrders: 0,
+      totalSpending: 0,
+      status: 'Active',
+      addresses: [],
+    };
+    setCustomers((prev) => [newCust, ...prev]);
+    setActiveCustomerId(newCust.id);
+    const session: AuthenticatedSession = {
+      id: newCust.id,
+      fullName: newCust.fullName,
+      email: newCust.email,
+      phone: newCust.phone,
+      accountType: 'customer',
+      roleTitle: 'Private Client',
+    };
+    setAuthUser(session);
+    showToast(
+      `Welcome, ${newCust.fullName}`,
+      'Your personal dashboard has been initialized.',
+      'success'
+    );
+    return session;
+  };
+
+  const registerAccount = (data: {
+    fullName: string;
+    email: string;
+    phone: string;
+    accountType: 'customer' | 'staff' | 'admin';
+    staffRole?: StaffMember['role'];
+  }): AuthenticatedSession => {
+    if (data.accountType === 'admin' || data.accountType === 'staff') {
+      const assignedRole: StaffMember['role'] =
+        data.staffRole ||
+        (data.accountType === 'admin' ? 'Admin' : 'Order Manager');
+      const newStaff: StaffMember = {
+        id: `STF-0${staff.length + 1}`,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        role: assignedRole,
+        status: 'Active',
+        joinedDate: new Date().toISOString().slice(0, 10),
+        lastActive: 'Just now',
+      };
+      setStaff((prev) => [newStaff, ...prev]);
+      const session: AuthenticatedSession = {
+        id: newStaff.id,
+        fullName: newStaff.fullName,
+        email: newStaff.email,
+        phone: newStaff.phone,
+        accountType: data.accountType,
+        roleTitle: assignedRole,
+      };
+      setAuthUser(session);
+      showToast(
+        `${data.fullName} Registered`,
+        `Signed in as ${assignedRole} in MAISON VÉRA Console.`,
+        'success'
+      );
+      return session;
+    }
+
+    const newCustomer: Customer = {
+      id: `CUST-00${customers.length + 1}`,
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      avatar: INITIAL_CUSTOMERS[0].avatar,
+      joinedDate: new Date().toISOString().slice(0, 10),
+      totalOrders: 0,
+      totalSpending: 0,
+      status: 'Active',
+      addresses: [
+        {
+          id: `ADDR-${Date.now().toString().slice(-4)}`,
+          label: 'Primary Residence',
+          fullName: data.fullName,
+          phone: data.phone,
+          province: 'Bagmati Province',
+          district: 'Kathmandu',
+          municipality: 'Kathmandu Metropolitan City',
+          ward: 'Ward 03',
+          street: 'Durbar Marg Enclave',
+          landmark: 'Near Heritage Wing',
+          isDefault: true,
+        },
+      ],
+    };
+    setCustomers((prev) => [newCustomer, ...prev]);
+    setActiveCustomerId(newCustomer.id);
+    const session: AuthenticatedSession = {
+      id: newCustomer.id,
+      fullName: newCustomer.fullName,
+      email: newCustomer.email,
+      phone: newCustomer.phone,
+      accountType: 'customer',
+      roleTitle: 'Private Client',
+    };
+    setAuthUser(session);
+    showToast(
+      `Welcome to MAISON VÉRA, ${newCustomer.fullName}`,
+      'Your personal Client Dashboard has been created.',
+      'success'
+    );
+    return session;
+  };
+
+  const logoutUser = () => {
+    setAuthUser(null);
+    showToast('Signed Out', 'Your session has been closed.');
+  };
 
   const addToCart = (newItem: CartItem) => {
     setCart((prev) => {
@@ -508,8 +749,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateCustomerProfile = (data: Partial<Customer>) => {
     setCustomers((prev) =>
-      prev.map((c, idx) => (idx === 0 ? { ...c, ...data } : c))
+      prev.map((c) => (c.id === currentCustomer.id ? { ...c, ...data } : c))
     );
+    if (authUser && authUser.accountType === 'customer') {
+      setAuthUser({
+        ...authUser,
+        fullName: data.fullName || authUser.fullName,
+        email: data.email || authUser.email,
+        phone: data.phone || authUser.phone,
+      });
+    }
     showToast('Profile Saved', 'Your client dossier has been updated.', 'success');
   };
 
@@ -519,8 +768,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       id: `ADDR-${Date.now().toString().slice(-4)}`,
     };
     setCustomers((prev) =>
-      prev.map((c, idx) => {
-        if (idx !== 0) return c;
+      prev.map((c) => {
+        if (c.id !== currentCustomer.id) return c;
         const list = address.isDefault
           ? c.addresses.map((a) => ({ ...a, isDefault: false }))
           : c.addresses;
@@ -532,8 +781,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateCustomerAddress = (address: CustomerAddress) => {
     setCustomers((prev) =>
-      prev.map((c, idx) => {
-        if (idx !== 0) return c;
+      prev.map((c) => {
+        if (c.id !== currentCustomer.id) return c;
         const list = c.addresses.map((a) => {
           if (a.id === address.id) return address;
           return address.isDefault ? { ...a, isDefault: false } : a;
@@ -546,8 +795,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const deleteCustomerAddress = (id: string) => {
     setCustomers((prev) =>
-      prev.map((c, idx) =>
-        idx === 0 ? { ...c, addresses: c.addresses.filter((a) => a.id !== id) } : c
+      prev.map((c) =>
+        c.id === currentCustomer.id
+          ? { ...c, addresses: c.addresses.filter((a) => a.id !== id) }
+          : c
       )
     );
     showToast('Address Deleted');
@@ -555,8 +806,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const setDefaultCustomerAddress = (id: string) => {
     setCustomers((prev) =>
-      prev.map((c, idx) =>
-        idx === 0
+      prev.map((c) =>
+        c.id === currentCustomer.id
           ? {
               ...c,
               addresses: c.addresses.map((a) => ({ ...a, isDefault: a.id === id })),
@@ -783,6 +1034,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         orders,
         customers,
         currentCustomer,
+        authUser,
         staff,
         roles,
         coupons,
@@ -799,6 +1051,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         toasts,
         showToast,
         dismissToast,
+        loginWithCredentials,
+        registerAccount,
+        logoutUser,
         addToCart,
         removeFromCart,
         updateCartQuantity,
