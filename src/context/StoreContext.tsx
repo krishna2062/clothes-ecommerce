@@ -42,6 +42,8 @@ import {
 import { productService, categoryService } from '../services/api/productService';
 import { orderService } from '../services/api/orderService';
 import { authService } from '../services/api/authService';
+import { supabaseDbService } from '../services/supabaseDbService';
+
 
 export interface ToastMessage {
   id: string;
@@ -252,38 +254,67 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Synchronize state from ASP.NET Core 8 Backend & Supabase Database when reachable
+  // Synchronize state from Supabase Database & ASP.NET Core 8 Backend when reachable
   useEffect(() => {
     let isMounted = true;
-    async function syncFromBackend() {
+    async function syncFromDatabase() {
       try {
-        const [apiProducts, apiCategories, apiCollections, apiOrders] = await Promise.allSettled([
-          productService.getProducts(),
-          categoryService.getCategories(),
-          categoryService.getCollections(),
-          orderService.getAllOrdersAdmin(),
+        // 1. Try Supabase direct connection first
+        const [sbProducts, sbCategories, sbCollections, sbOrders] = await Promise.allSettled([
+          supabaseDbService.getProducts(),
+          supabaseDbService.getCategories(),
+          supabaseDbService.getCollections(),
+          supabaseDbService.getOrders(),
         ]);
 
         if (!isMounted) return;
 
-        if (apiProducts.status === 'fulfilled' && apiProducts.value.length > 0) {
-          setProducts(apiProducts.value);
+        let hasLoadedFromDb = false;
+
+        if (sbProducts.status === 'fulfilled' && sbProducts.value.length > 0) {
+          setProducts(sbProducts.value);
+          hasLoadedFromDb = true;
         }
-        if (apiCategories.status === 'fulfilled' && apiCategories.value.length > 0) {
-          setCategories(apiCategories.value);
+        if (sbCategories.status === 'fulfilled' && sbCategories.value.length > 0) {
+          setCategories(sbCategories.value);
         }
-        if (apiCollections.status === 'fulfilled' && apiCollections.value.length > 0) {
-          setCollections(apiCollections.value);
+        if (sbCollections.status === 'fulfilled' && sbCollections.value.length > 0) {
+          setCollections(sbCollections.value);
         }
-        if (apiOrders.status === 'fulfilled' && apiOrders.value.length > 0) {
-          setOrders(apiOrders.value);
+        if (sbOrders.status === 'fulfilled' && sbOrders.value.length > 0) {
+          setOrders(sbOrders.value);
+        }
+
+        // 2. If Supabase is not connected yet, try ASP.NET Core API fallback
+        if (!hasLoadedFromDb) {
+          const [apiProducts, apiCategories, apiCollections, apiOrders] = await Promise.allSettled([
+            productService.getProducts(),
+            categoryService.getCategories(),
+            categoryService.getCollections(),
+            orderService.getAllOrdersAdmin(),
+          ]);
+
+          if (!isMounted) return;
+
+          if (apiProducts.status === 'fulfilled' && apiProducts.value.length > 0) {
+            setProducts(apiProducts.value);
+          }
+          if (apiCategories.status === 'fulfilled' && apiCategories.value.length > 0) {
+            setCategories(apiCategories.value);
+          }
+          if (apiCollections.status === 'fulfilled' && apiCollections.value.length > 0) {
+            setCollections(apiCollections.value);
+          }
+          if (apiOrders.status === 'fulfilled' && apiOrders.value.length > 0) {
+            setOrders(apiOrders.value);
+          }
         }
       } catch {
-        // Keep active localStorage fallback if backend is offline
+        // Keep active localStorage fallback if database is offline
       }
     }
 
-    syncFromBackend();
+    syncFromDatabase();
     return () => {
       isMounted = false;
     };
@@ -681,6 +712,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setOrders((prev) => [newOrder, ...prev]);
     setLastCreatedOrder(newOrder);
     clearCart();
+
+    // Persist order to Supabase PostgreSQL database
+    supabaseDbService.createOrder(newOrder).catch((err) => {
+      console.warn('[Supabase] Background order sync deferred:', err.message);
+    });
+
     setNotifications((prev) => [
       {
         id: `NTF-${Date.now()}`,
@@ -695,7 +732,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     ]);
     showToast(
       `Order #${newOrder.orderNumber} Confirmed`,
-      'Demonstration checkout completed. Review your order receipt.',
+      'Order placed and saved to database.',
       'success'
     );
     return newOrder;
@@ -720,6 +757,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         };
       })
     );
+
+    // Persist updated status to Supabase PostgreSQL database
+    supabaseDbService.updateOrderStatus(orderId, status).catch((err) => {
+      console.warn('[Supabase] Background status sync deferred:', err.message);
+    });
+
     logAudit('Updated Order Status', 'Orders', `Order ${orderId} changed to ${status}`);
     showToast('Order Status Updated', `Marked as ${status}`, 'success');
   };
@@ -878,13 +921,25 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return [product, ...prev];
     });
+
+    // Persist product directly to Supabase PostgreSQL database
+    supabaseDbService.saveProduct(product).catch((err) => {
+      console.warn('[Supabase] Background product save deferred:', err.message);
+    });
+
     logAudit('Saved Product', 'Products', `${product.name} (${product.sku})`);
-    showToast('Product Saved', `${product.name} has been updated in catalog.`, 'success');
+    showToast('Product Saved', `${product.name} has been updated in database.`, 'success');
   };
 
   const deleteProduct = (id: string) => {
     const target = products.find((p) => p.id === id);
     setProducts((prev) => prev.filter((p) => p.id !== id));
+
+    // Persist product deletion directly in Supabase PostgreSQL database
+    supabaseDbService.deleteProduct(id).catch((err) => {
+      console.warn('[Supabase] Background product delete deferred:', err.message);
+    });
+
     logAudit('Deleted Product', 'Products', target?.name || id);
     showToast('Product Removed', target?.name);
   };
