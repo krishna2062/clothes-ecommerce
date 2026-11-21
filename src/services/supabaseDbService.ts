@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Product, Category, CollectionItem, Order, OrderStatusType, PaymentStatusType, BrandSettings, PaymentGatewaySettings } from '../types';
+import { Product, Category, CollectionItem, Order, OrderStatusType, PaymentStatusType } from '../types';
 
 export const supabaseDbService = {
   // PRODUCTS
@@ -162,6 +162,7 @@ export const supabaseDbService = {
       const { data, error } = await supabase
         .from('orders')
         .select('*, "OrderItems"(*)')
+        .eq('IsDeleted', false)
         .order('CreatedAt', { ascending: false });
 
       if (error || !data) return [];
@@ -182,18 +183,27 @@ export const supabaseDbService = {
       const { error: orderErr } = await supabase.from('orders').insert({
         Id: orderId,
         OrderNumber: order.orderNumber,
-        CustomerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', // client UUID
+        CustomerName: order.customerName || 'Atelier Client',
+        CustomerEmail: order.customerEmail || 'client@maisonvera.com',
+        CustomerPhone: order.customerPhone || '+977 9801122334',
+        OrderDate: now,
         Subtotal: order.subtotal,
-        DiscountAmount: order.discount || 0,
-        ShippingAmount: order.deliveryCharge || 0,
+        Discount: order.discount || 0,
+        DeliveryMethod: 'Standard White-Glove',
+        DeliveryCharge: order.deliveryCharge || 0,
         TotalAmount: order.total,
-        OrderStatus: order.orderStatus,
-        PaymentStatus: order.paymentStatus,
-        PaymentMethod: order.paymentMethod,
-        DeliveryZone: order.deliveryZone,
-        ShippingAddress: order.shippingAddress,
-        TrackingNumber: order.trackingNumber || `TRK-${order.orderNumber}`,
-        Notes: order.notes || '',
+        PaymentMethod: order.paymentMethod || 'COD',
+        PaymentStatus: order.paymentStatus || 'PendingVerification',
+        OrderStatus: order.orderStatus || 'Placed',
+        CancellationRequested: false,
+        ShippingProvince: order.shippingAddress?.province || 'Bagmati Province',
+        ShippingDistrict: order.shippingAddress?.district || 'Kathmandu',
+        ShippingMunicipality: order.shippingAddress?.municipality || 'Kathmandu Metropolitan',
+        ShippingWard: order.shippingAddress?.ward || '01',
+        ShippingStreet: order.shippingAddress?.street || 'Durbar Marg',
+        ShippingLandmark: order.shippingAddress?.landmark || '',
+        ShippingInstructions: order.shippingAddress?.specialInstructions || '',
+        ConcurrencyToken: crypto.randomUUID(),
         CreatedAt: now,
         UpdatedAt: now,
         IsDeleted: false,
@@ -210,14 +220,17 @@ export const supabaseDbService = {
           Id: crypto.randomUUID(),
           OrderId: orderId,
           ProductId: i.productId.startsWith('PRD-') ? 'e1111111-1111-1111-1111-111111111111' : i.productId,
+          VariantId: crypto.randomUUID(),
           ProductName: i.name,
+          ProductSlug: i.slug || 'garment',
           ProductSku: `SKU-${i.productId}`,
-          ProductImageUrl: i.image,
+          ImageUrl: i.image,
           Size: i.size,
-          ColorName: i.color,
+          Color: i.color,
           UnitPrice: i.unitPrice,
+          OriginalPrice: i.originalPrice || i.unitPrice,
           Quantity: i.quantity,
-          TotalPrice: i.unitPrice * i.quantity,
+          LineTotal: i.unitPrice * i.quantity,
           CreatedAt: now,
         }));
 
@@ -305,48 +318,46 @@ function mapRowToProduct(row: any): Product {
 function mapRowToOrder(row: any): Order {
   const items = (row['OrderItems'] || []).map((i: any) => ({
     productId: i.ProductId,
-    slug: '',
+    slug: i.ProductSlug || '',
     name: i.ProductName,
-    image: i.ProductImageUrl,
+    image: i.ImageUrl,
     size: i.Size,
-    color: i.ColorName,
+    color: i.Color,
     unitPrice: Number(i.UnitPrice),
-    originalPrice: Number(i.UnitPrice),
+    originalPrice: Number(i.OriginalPrice || i.UnitPrice),
     quantity: Number(i.Quantity),
   }));
 
   return {
     id: row.Id,
     orderNumber: row.OrderNumber,
-    customerId: row.CustomerId,
-    customerName: 'Atelier Client',
-    customerEmail: 'client@maisonvera.com',
-    customerPhone: '+977 1 4239800',
+    customerId: row.UserId || 'CUST-001',
+    customerName: row.CustomerName || 'Atelier Client',
+    customerEmail: row.CustomerEmail || 'client@maisonvera.com',
+    customerPhone: row.CustomerPhone || '+977 1 4239800',
     date: row.CreatedAt ? row.CreatedAt.split('T')[0] : '2026-11-21',
     items,
     subtotal: Number(row.Subtotal),
-    discount: Number(row.DiscountAmount || 0),
-    deliveryCharge: Number(row.ShippingAmount || 0),
+    discount: Number(row.Discount || 0),
+    deliveryCharge: Number(row.DeliveryCharge || 0),
     total: Number(row.TotalAmount),
     currency: 'NPR',
     paymentMethod: row.PaymentMethod || 'COD',
     paymentStatus: row.PaymentStatus as PaymentStatusType,
     orderStatus: row.OrderStatus as OrderStatusType,
-    deliveryZone: row.DeliveryZone || 'Bagmati Province',
-    shippingAddress: typeof row.ShippingAddress === 'object' && row.ShippingAddress !== null
-      ? row.ShippingAddress
-      : {
-          fullName: 'Atelier Client',
-          phoneNumber: '+977 1 4239800',
-          province: 'Bagmati Province',
-          district: 'Kathmandu',
-          municipality: 'Kathmandu Metropolitan',
-          ward: '01',
-          street: 'Durbar Marg',
-          landmark: '',
-          specialInstructions: '',
-        },
-    trackingNumber: row.TrackingNumber,
-    notes: row.Notes || '',
+    deliveryZone: row.ShippingProvince || 'Bagmati Province',
+    shippingAddress: {
+      fullName: row.CustomerName || '',
+      phoneNumber: row.CustomerPhone || '',
+      province: row.ShippingProvince || 'Bagmati Province',
+      district: row.ShippingDistrict || 'Kathmandu',
+      municipality: row.ShippingMunicipality || 'Kathmandu Metropolitan',
+      ward: row.ShippingWard || '01',
+      street: row.ShippingStreet || 'Durbar Marg',
+      landmark: row.ShippingLandmark || '',
+      specialInstructions: row.ShippingInstructions || '',
+    },
+    trackingNumber: `TRK-${row.OrderNumber}`,
+    notes: row.AdminNotes || '',
   };
 }
