@@ -39,6 +39,9 @@ import {
   INITIAL_PAYMENT_SETTINGS,
   INITIAL_STOCK_MOVEMENTS,
 } from '../data/mockData';
+import { productService, categoryService } from '../services/api/productService';
+import { orderService } from '../services/api/orderService';
+import { authService } from '../services/api/authService';
 
 export interface ToastMessage {
   id: string;
@@ -248,6 +251,43 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     INITIAL_ORDERS[0] || null
   );
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Synchronize state from ASP.NET Core 8 Backend & Supabase Database when reachable
+  useEffect(() => {
+    let isMounted = true;
+    async function syncFromBackend() {
+      try {
+        const [apiProducts, apiCategories, apiCollections, apiOrders] = await Promise.allSettled([
+          productService.getProducts(),
+          categoryService.getCategories(),
+          categoryService.getCollections(),
+          orderService.getAllOrdersAdmin(),
+        ]);
+
+        if (!isMounted) return;
+
+        if (apiProducts.status === 'fulfilled' && apiProducts.value.length > 0) {
+          setProducts(apiProducts.value);
+        }
+        if (apiCategories.status === 'fulfilled' && apiCategories.value.length > 0) {
+          setCategories(apiCategories.value);
+        }
+        if (apiCollections.status === 'fulfilled' && apiCollections.value.length > 0) {
+          setCollections(apiCollections.value);
+        }
+        if (apiOrders.status === 'fulfilled' && apiOrders.value.length > 0) {
+          setOrders(apiOrders.value);
+        }
+      } catch {
+        // Keep active localStorage fallback if backend is offline
+      }
+    }
+
+    syncFromBackend();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     try {
