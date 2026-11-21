@@ -996,8 +996,8 @@ ON CONFLICT ("Id") DO NOTHING;
 -- 2. USERS (Super Admin & Demo Client)
 
 INSERT INTO users ("Id", "Email", "NormalizedEmail", "PhoneNumber", "PasswordHash", "SecurityStamp", "ConcurrencyStamp", "UserType", "IsActive", "EmailConfirmed", "PhoneConfirmed", "TwoFactorEnabled", "LockoutEnabled", "AccessFailedCount", "CreatedAt", "UpdatedAt", "IsDeleted") VALUES
-('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'admin@maisonvera.com', 'ADMIN@MAISONVERA.COM', '+977 1 4239800', 'HXA37jA56yS/Gntf0AApyg==:fxtdPZGDRW0TkMBU8iOa86xU/s1U0rE+zHD4iDQITJY=', gen_random_uuid()::text, gen_random_uuid()::text, 'Admin', true, true, true, false, false, 0, NOW(), NOW(), false),
-('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aarav.shrestha@atelier.np', 'AARAV.SHRESTHA@ATELIER.NP', '+977 9801122334', '9zPWvGElxauM5xCR8kytzg==:Pv/84AVYZX+ob4Qi5RBWeJvR6Gs4rap5h53ljKv44SA=', gen_random_uuid()::text, gen_random_uuid()::text, 'Customer', true, true, true, false, false, 0, NOW(), NOW(), false)
+('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'admin@maisonvera.com', 'ADMIN@MAISONVERA.COM', '+977 1 4239800', 'qYE3S+4LyKmAG2YLujIUNQ==:ypC9qJ36h1OgmShgSZdheSiWDgbXFh37Ry9n32t7MsE=', gen_random_uuid()::text, gen_random_uuid()::text, 'Admin', true, true, true, false, false, 0, NOW(), NOW(), false),
+('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aarav.shrestha@atelier.np', 'AARAV.SHRESTHA@ATELIER.NP', '+977 9801122334', 'oHlkxBqmwFtXiscKINQ2zw==:E7B3KGxCB7p+iPs1vStGWky2VgH7fPBogUclt9EL/M8=', gen_random_uuid()::text, gen_random_uuid()::text, 'Customer', true, true, true, false, false, 0, NOW(), NOW(), false)
 ON CONFLICT ("Id") DO NOTHING;
 
 INSERT INTO staff_profiles ("UserId", "FullName", "EmployeeCode", "Department", "LastActiveAt", "UpdatedAt") VALUES
@@ -1195,7 +1195,8 @@ ON CONFLICT ("Id") DO UPDATE SET
 
 -- 10. CAMPAIGN BANNERS
 
-INSERT INTO "CampaignBanners" ("Id", "Title", "Subtitle", "CtaText", "CtaLink", "DesktopImageUrl", "MobileImageUrl", "DisplayOrder", "Active", "CreatedAt") VALUES
-(gen_random_uuid(), 'L''HIVER ARCHITECTURAL 2026', 'A dialogue between brutalist proportion and pure Italian virgin wool.', 'Discover the Collection', '/collections/men', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=85', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=85', 1, true, NOW())
+INSERT INTO "CampaignBanners" ("Id", "Title", "Subtitle", "CtaText", "CtaLink", "DesktopImageUrl", "MobileImageUrl", "DisplayOrder", "Active", "CreatedAt", "UpdatedAt", "IsDeleted") VALUES
+(gen_random_uuid(), 'L''HIVER ARCHITECTURAL 2026', 'A dialogue between brutalist proportion and pure Italian virgin wool.', 'Discover the Collection', '/collections/men', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=85', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=85', 1, true, NOW(), NOW(), false)
 ON CONFLICT DO NOTHING;
+
 

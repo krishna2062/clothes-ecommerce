@@ -290,9 +290,10 @@ ON CONFLICT (""Id"") DO UPDATE SET
         // 10. Campaign Banners (table name is `"CampaignBanners"`)
         sb.AppendLine("-- 10. CAMPAIGN BANNERS");
         sb.AppendLine(@"
-INSERT INTO ""CampaignBanners"" (""Id"", ""Title"", ""Subtitle"", ""CtaText"", ""CtaLink"", ""DesktopImageUrl"", ""MobileImageUrl"", ""DisplayOrder"", ""Active"", ""CreatedAt"") VALUES
-(gen_random_uuid(), 'L''HIVER ARCHITECTURAL 2026', 'A dialogue between brutalist proportion and pure Italian virgin wool.', 'Discover the Collection', '/collections/men', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=85', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=85', 1, true, NOW())
+INSERT INTO ""CampaignBanners"" (""Id"", ""Title"", ""Subtitle"", ""CtaText"", ""CtaLink"", ""DesktopImageUrl"", ""MobileImageUrl"", ""DisplayOrder"", ""Active"", ""CreatedAt"", ""UpdatedAt"", ""IsDeleted"") VALUES
+(gen_random_uuid(), 'L''HIVER ARCHITECTURAL 2026', 'A dialogue between brutalist proportion and pure Italian virgin wool.', 'Discover the Collection', '/collections/men', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2000&q=85', 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=800&q=85', 1, true, NOW(), NOW(), false)
 ON CONFLICT DO NOTHING;
+
 ");
 
         var outputPath = Path.Combine(Path.GetDirectoryName(schemaPath)!, "supabase_setup_and_seed.sql");
