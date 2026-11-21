@@ -949,12 +949,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const exists = prev.some((c) => c.id === category.id);
       return exists ? prev.map((c) => (c.id === category.id ? category : c)) : [...prev, category];
     });
+    supabaseDbService.saveCategory(category).catch((err) => {
+      console.warn('[Supabase] Category save deferred:', err.message);
+    });
     logAudit('Saved Category', 'Categories', category.name);
     showToast('Category Saved', category.name, 'success');
   };
 
   const deleteCategory = (id: string) => {
     setCategories((prev) => prev.filter((c) => c.id !== id));
+    supabaseDbService.deleteCategory(id).catch((err) => {
+      console.warn('[Supabase] Category delete deferred:', err.message);
+    });
     logAudit('Deleted Category', 'Categories', id);
     showToast('Category Deleted');
   };
@@ -966,15 +972,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ? prev.map((c) => (c.id === collection.id ? collection : c))
         : [...prev, collection];
     });
+    supabaseDbService.saveCollection(collection).catch((err) => {
+      console.warn('[Supabase] Collection save deferred:', err.message);
+    });
     logAudit('Saved Collection', 'Collections', collection.name);
     showToast('Collection Saved', collection.name, 'success');
   };
 
   const deleteCollection = (id: string) => {
     setCollections((prev) => prev.filter((c) => c.id !== id));
+    supabaseDbService.deleteCollection(id).catch((err) => {
+      console.warn('[Supabase] Collection delete deferred:', err.message);
+    });
     logAudit('Deleted Collection', 'Collections', id);
     showToast('Collection Deleted');
   };
+
 
   const adjustInventoryStock = (
     productId: string,

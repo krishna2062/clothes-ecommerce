@@ -43,6 +43,25 @@ export const supabaseDbService = {
         ? crypto.randomUUID()
         : product.id;
 
+      // Find matching category ID if available
+      let categoryId = 'c1111111-1111-1111-1111-111111111111';
+      try {
+        const { data: cats } = await supabase
+          .from('categories')
+          .select('Id, Name, Slug')
+          .eq('IsDeleted', false);
+        if (cats && cats.length > 0) {
+          const match = cats.find(
+            (c: any) =>
+              c.Name.toLowerCase() === product.category.toLowerCase() ||
+              c.Slug.toLowerCase() === product.categorySlug.toLowerCase()
+          );
+          if (match) categoryId = match.Id;
+        }
+      } catch {
+        // Fallback to default category
+      }
+
       // Upsert product row
       const { error: prodError } = await supabase.from('products').upsert({
         Id: productId,
@@ -52,7 +71,7 @@ export const supabaseDbService = {
         Description: product.description,
         MaterialsAndCare: product.materialsAndCare || [],
         ShippingInfo: product.shippingInfo || '',
-        CategoryId: 'c1111111-1111-1111-1111-111111111111', // default or matched
+        CategoryId: categoryId,
         GenderCollection: product.collection || 'Unisex',
         CollectionTag: product.collectionTag || '',
         OriginalPrice: product.originalPrice,
@@ -74,6 +93,44 @@ export const supabaseDbService = {
       if (prodError) {
         console.error('[Supabase] Failed to save product:', prodError);
         return false;
+      }
+
+      // Sync ProductSizes
+      if (product.sizes && product.sizes.length > 0) {
+        await supabase.from('ProductSizes').delete().eq('ProductId', productId);
+        const sizesToInsert = product.sizes.map((s, idx) => ({
+          Id: crypto.randomUUID(),
+          ProductId: productId,
+          SizeName: s,
+          DisplayOrder: idx + 1,
+        }));
+        await supabase.from('ProductSizes').insert(sizesToInsert);
+      }
+
+      // Sync ProductColors
+      if (product.colors && product.colors.length > 0) {
+        await supabase.from('ProductColors').delete().eq('ProductId', productId);
+        const colorsToInsert = product.colors.map((c) => ({
+          Id: crypto.randomUUID(),
+          ProductId: productId,
+          ColorName: c.name,
+          HexCode: c.hex,
+        }));
+        await supabase.from('ProductColors').insert(colorsToInsert);
+      }
+
+      // Sync ProductImages
+      if (product.images && product.images.length > 0) {
+        await supabase.from('ProductImages').delete().eq('ProductId', productId);
+        const imagesToInsert = product.images.map((imgUrl, idx) => ({
+          Id: crypto.randomUUID(),
+          ProductId: productId,
+          ImageUrl: imgUrl,
+          AltText: `${product.name} View ${idx + 1}`,
+          DisplayOrder: idx + 1,
+          CreatedAt: now,
+        }));
+        await supabase.from('ProductImages').insert(imagesToInsert);
       }
 
       return true;
@@ -125,6 +182,47 @@ export const supabaseDbService = {
     }
   },
 
+  async saveCategory(cat: Category): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+
+    try {
+      const now = new Date().toISOString();
+      const id = cat.id.startsWith('CAT-') ? crypto.randomUUID() : cat.id;
+
+      const { error } = await supabase.from('categories').upsert({
+        Id: id,
+        Name: cat.name,
+        Slug: cat.slug,
+        Description: cat.description || '',
+        ImageUrl: cat.image,
+        SortOrder: 1,
+        Status: cat.status === 'Active' ? 'Active' : 'Inactive',
+        CreatedAt: now,
+        UpdatedAt: now,
+        IsDeleted: false,
+      });
+
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  async deleteCategory(categoryId: string): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({ IsDeleted: true, UpdatedAt: new Date().toISOString() })
+        .eq('Id', categoryId);
+
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
   // COLLECTIONS
   async getCollections(): Promise<CollectionItem[]> {
     if (!supabase || !isSupabaseConfigured) return [];
@@ -153,6 +251,50 @@ export const supabaseDbService = {
       return [];
     }
   },
+
+  async saveCollection(col: CollectionItem): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+
+    try {
+      const now = new Date().toISOString();
+      const id = col.id.startsWith('COL-') ? crypto.randomUUID() : col.id;
+
+      const { error } = await supabase.from('collections').upsert({
+        Id: id,
+        Name: col.name,
+        Slug: col.slug,
+        Subtitle: col.subtitle || '',
+        Description: col.description || '',
+        BannerImageUrl: col.bannerImage,
+        Featured: Boolean(col.featured),
+        SortOrder: 1,
+        Status: col.status === 'Active' ? 'Active' : 'Inactive',
+        CreatedAt: now,
+        UpdatedAt: now,
+        IsDeleted: false,
+      });
+
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
+  async deleteCollection(collectionId: string): Promise<boolean> {
+    if (!supabase || !isSupabaseConfigured) return false;
+
+    try {
+      const { error } = await supabase
+        .from('collections')
+        .update({ IsDeleted: true, UpdatedAt: new Date().toISOString() })
+        .eq('Id', collectionId);
+
+      return !error;
+    } catch {
+      return false;
+    }
+  },
+
 
   // ORDERS
   async getOrders(): Promise<Order[]> {
