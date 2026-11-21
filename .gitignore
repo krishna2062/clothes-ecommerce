@@ -1,3 +1,4 @@
+# Node & Frontend
 node_modules/
 build/
 dist/
@@ -7,5 +8,13 @@ coverage/
 .env*
 !.env.example
 .vercel/
+
+# .NET & Backend
+bin/
+obj/
+*.user
+*.suo
+.vs/
 .vscode/
 .antigravity/
+appsettings.Development.json

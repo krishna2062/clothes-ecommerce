@@ -1,0 +1,30 @@
+name: Supabase Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      connection_string:
+        description: 'Supabase Direct Connection String (Optional if secret is set)'
+        required: false
+        default: ''
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install EF Core CLI Tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Execute EF Core Database Update
+        env:
+          ConnectionStrings__DefaultConnection: ${{ secrets.SUPABASE_CONNECTION_STRING || inputs.connection_string }}
+        run: |
+          dotnet ef database update --project backend/src/ClothingStore.Infrastructure/ClothingStore.Infrastructure.csproj --startup-project backend/src/ClothingStore.Api/ClothingStore.Api.csproj --verbose
